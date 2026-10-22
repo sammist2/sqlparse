@@ -25,6 +25,15 @@ class _CaseFilter:
 class KeywordCaseFilter(_CaseFilter):
     ttype = T.Keyword
 
+    def process(self, stream):
+        for ttype, value in stream:
+            # Word operators such as LIKE, NOT ILIKE or REGEXP are lexed as
+            # comparisons, not keywords, but are written like keywords.
+            # Symbolic comparisons (=, <>, ...) are unaffected by case.
+            if ttype in T.Keyword or ttype in T.Operator.Comparison:
+                value = self.convert(value)
+            yield ttype, value
+
 
 class IdentifierCaseFilter(_CaseFilter):
     ttype = T.Name, T.String.Symbol

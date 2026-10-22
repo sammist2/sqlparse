@@ -14,6 +14,19 @@ class TestFormat:
         res = sqlparse.format(sql.upper(), keyword_case='lower')
         assert res == 'select * from BAR; -- SELECT FOO\n'
 
+    @pytest.mark.parametrize('sql, case, expected', [
+        ('select x like y from z;', 'upper', 'SELECT x LIKE y FROM z;'),
+        ('SELECT x NOT ILIKE y', 'lower', 'select x not ilike y'),
+        ('select x rlike y', 'upper', 'SELECT x RLIKE y'),
+        ('select x regexp binary y', 'upper', 'SELECT x REGEXP BINARY y'),
+        ('select x not like y', 'capitalize', 'Select x Not like y'),
+        ('select x >= y', 'upper', 'SELECT x >= y'),
+    ])
+    def test_keywordcase_word_operators(self, sql, case, expected):
+        # issue640: word comparison operators are lexed as comparisons, not
+        # keywords, but keyword_case should still apply to them.
+        assert sqlparse.format(sql, keyword_case=case) == expected
+
     def test_keywordcase_invalid_option(self):
         sql = 'select * from bar; -- select foo\n'
         with pytest.raises(SQLParseError):
